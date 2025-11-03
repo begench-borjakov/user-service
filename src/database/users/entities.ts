@@ -2,7 +2,7 @@ export type UserRole = 'ADMIN' | 'USER'
 
 export interface IUserBase {
     fullName: string
-    birthDate?: Date | null
+    birthDate: Date | null
     email: string
     passwordHash: string
     role: UserRole
