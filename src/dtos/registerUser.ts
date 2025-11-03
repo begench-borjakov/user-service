@@ -1,6 +1,6 @@
 export interface RegisterDto {
     fullName: string
-    birthDate?: Date | null
+    birthDate?: string | null
     email: string
     password: string
 }

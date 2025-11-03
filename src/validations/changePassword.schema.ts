@@ -7,7 +7,7 @@ export const ChangePasswordSchema = z
         newPassword: z.preprocess(trimString, z.string().min(6).max(72)),
     })
     .strict()
-    .refine((v) => v.currentPassword !== v.newPassword, {
+    .refine((value) => value.currentPassword !== value.newPassword, {
         message: 'newPassword must be different from currentPassword',
         path: ['newPassword'],
     })

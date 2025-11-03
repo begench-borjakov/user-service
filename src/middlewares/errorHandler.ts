@@ -1,23 +1,23 @@
 import type { Request, Response, NextFunction } from 'express'
 import { ZodError } from 'zod'
 
-function hasStatus(v: unknown): v is { status: number } {
+function hasStatus(error: unknown): error is { status: number } {
     return (
-        typeof v === 'object' &&
-        v !== null &&
-        'status' in v &&
-        typeof (v as { status: unknown }).status === 'number'
+        typeof error === 'object' &&
+        error !== null &&
+        'status' in error &&
+        typeof (error as { status: unknown }).status === 'number'
     )
 }
 
 function hasMongoDupCode(
-    v: unknown
-): v is { code: number; keyValue?: Record<string, unknown> } {
+    error: unknown
+): error is { code: number; keyValue?: Record<string, unknown> } {
     return (
-        typeof v === 'object' &&
-        v !== null &&
-        'code' in v &&
-        (v as { code: unknown }).code === 11000
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: unknown }).code === 11000
     )
 }
 

@@ -3,4 +3,5 @@ export interface PagedRto<TItem> {
     page: number
     limit: number
     total: number
+    pages: number
 }

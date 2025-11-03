@@ -12,30 +12,23 @@ export async function requireActiveUser(
         return
     }
 
-    const doc = await UserModel.findById(auth.sub)
-        .select({ isActive: 1 })
-        .lean()
+    try {
+        const doc = await UserModel.findById(auth.sub)
+            .select('isActive')
+            .lean<{ isActive: boolean } | null>()
 
-    if (!doc) {
-        res.status(401).json({ message: 'Unauthorized' })
-        return
+        if (!doc) {
+            res.status(401).json({ message: 'Unauthorized' })
+            return
+        }
+
+        if (!doc.isActive) {
+            res.status(403).json({ message: 'User is blocked' })
+            return
+        }
+
+        next()
+    } catch (err) {
+        next(err)
     }
-
-    const hasIsActive =
-        typeof doc === 'object' &&
-        doc !== null &&
-        'isActive' in doc &&
-        typeof (doc as Record<string, unknown>).isActive === 'boolean'
-
-    if (!hasIsActive) {
-        res.status(401).json({ message: 'Unauthorized' })
-        return
-    }
-
-    if (!(doc as { isActive: boolean }).isActive) {
-        res.status(403).json({ message: 'User is blocked' })
-        return
-    }
-
-    next()
 }

@@ -1,4 +1,3 @@
-// src/utils/jwt.ts
 import jwt, {
     type Secret,
     type SignOptions,
@@ -11,9 +10,9 @@ const ISSUER = 'user-service'
 const ALG: Algorithm = 'HS256'
 
 function getEnv(name: string): string {
-    const v = process.env[name]
-    if (!v) throw new Error(`${name} is not set in environment`)
-    return v
+    const value = process.env[name]
+    if (!value) throw new Error(`${name} is not set in environment`)
+    return value
 }
 
 function getJwtSecret(): Secret {
