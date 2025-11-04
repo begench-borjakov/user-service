@@ -1,0 +1,64 @@
+User Service (Express + MongoDB + TypeScript)
+
+Простой сервис управления пользователями.
+
+Стек
+
+Node.js, Express
+
+MongoDB, Mongoose
+
+TypeScript (ESM)
+
+Zod (валидация)
+
+JWT (авторизация)
+
+bcryptjs (хеш паролей)
+
+helmet, cors
+
+Возможности
+
+Регистрация и логин (JWT Bearer)
+
+Роли: ADMIN и USER
+
+Статус пользователя: активен/заблокирован
+
+CRUD (читать/обновлять себя, список — только админ)
+
+Блокировка: может админ или сам пользователь
+
+Требования
+
+Node 18+
+
+MongoDB 6+
+
+Установка
+git clone <repo>
+cd user-service
+npm ci
+
+Переменные окружения
+
+Заполните .env на основе .env.example:
+
+PORT=4000
+MONGODB_URI=mongodb://localhost:27017/usersvc
+JWT_SECRET=dev_access_secret
+JWT_EXPIRES_IN=1d
+JWT_REFRESH_SECRET=dev_refresh_secret
+JWT_REFRESH_EXPIRES_IN=7d
+BCRYPT_SALT_ROUNDS=12
+
+Скрипты
+npm run dev     # запуск в dev (nodemon + tsx)
+npm run build   # компиляция в dist
+npm start       # запуск dist
+
+Запуск
+npm run dev
+# или
+npm run build && npm startы
