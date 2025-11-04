@@ -36,7 +36,7 @@ usersRoutes.patch(
     validateParams(IdParamsSchema),
     allowAdminOrSelf,
     validateBody(UpdateUserSchema),
-    usersController.updatePartial
+    usersController.update
 )
 
 usersRoutes.patch(

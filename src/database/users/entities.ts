@@ -53,3 +53,23 @@ export interface AuthUserPayload {
     role: UserRole
     email?: string
 }
+
+export type IdParams = { id: string }
+
+export type EntityWithHash = {
+    id: string
+    fullName: string
+    birthDate: Date | null
+    email: string
+    passwordHash: string
+    role: 'ADMIN' | 'USER'
+    isActive: boolean
+    createdAt: Date
+    updatedAt: Date
+}
+
+export type SetActiveResult = {
+    id: string
+    isActive: boolean
+    updatedAt: Date
+}

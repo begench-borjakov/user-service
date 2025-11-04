@@ -1,6 +1,6 @@
-import type { IUserSafe, UserRole } from '../database/users/entities.js'
-import type { RegisterSchemaInput } from '../validations/register.schema.js'
-import type { LoginSchemaInput } from '../validations/login.schema.js'
+import type { IUserSafe } from '../database/users/entities.js'
+import { RegisterDto } from '../dtos/registerUser.js'
+import { LoginDto } from '../dtos/loginUser.js'
 import { MongoUserRepository } from '../database/users/repository.js'
 import { hashPassword, comparePassword } from '../utils/password.js'
 import { signAccessToken } from '../utils/jwt.js'
@@ -8,18 +8,29 @@ import type { AuthRto } from '../rtos/auth.rto.js'
 import { mapUserSafeToRto } from '../rtos/user.mapper.js'
 
 const repo = new MongoUserRepository()
-const normalizeEmail = (email: string) => email.trim().toLowerCase()
+
+function toDateUTC(s?: string | null): Date | null {
+    return s ? new Date(`${s}T00:00:00.000Z`) : null
+}
 
 export class AuthService {
-    async register(input: RegisterSchemaInput): Promise<IUserSafe> {
-        const email = normalizeEmail(input.email)
+    async register(input: RegisterDto): Promise<IUserSafe> {
+        const exists = await repo.findByEmail(input.email)
+        if (exists) {
+            throw {
+                status: 409,
+                code: 'UNIQUE_EMAIL',
+                message: 'Email already exists',
+            }
+        }
+        const birthDate = toDateUTC(input.birthDate ?? null)
         const passwordHash = await hashPassword(input.password)
         const now = new Date()
 
         return repo.create({
             fullName: input.fullName,
-            birthDate: input.birthDate ?? null,
-            email,
+            birthDate,
+            email: input.email,
             passwordHash,
             role: 'USER',
             isActive: true,
@@ -28,10 +39,8 @@ export class AuthService {
         })
     }
 
-    async login(input: LoginSchemaInput): Promise<AuthRto> {
-        const email = normalizeEmail(input.email)
-
-        const user = await repo.findByEmailWithPassword(email)
+    async login(input: LoginDto): Promise<AuthRto> {
+        const user = await repo.findByEmailWithPassword(input.email)
         if (!user) {
             throw {
                 status: 401,
@@ -40,8 +49,8 @@ export class AuthService {
             }
         }
 
-        const ok = await comparePassword(input.password, user.passwordHash)
-        if (!ok) {
+        const fits = await comparePassword(input.password, user.passwordHash)
+        if (!fits) {
             throw {
                 status: 401,
                 code: 'INVALID_CREDENTIALS',
