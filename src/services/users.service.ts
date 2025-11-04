@@ -1,9 +1,18 @@
 import type { UsersQueryInput } from '../validations/users-query.schema.js'
-import type { UpdateUserSchemaInput } from '../validations/updateUser.schema.js'
-import type { ListUsersResult, IUserSafe } from '../database/users/entities.js'
+import { UpdateUserDto } from '../dtos/updateUser.js'
+import type {
+    ListUsersResult,
+    IUserSafe,
+    UserSort,
+    UpdateUserInput,
+} from '../database/users/entities.js'
 import { MongoUserRepository } from '../database/users/repository.js'
 
 const repo = new MongoUserRepository()
+
+function toDateUTC(s?: string | null): Date | null {
+    return s ? new Date(`${s}T00:00:00.000Z`) : null
+}
 
 export class UsersService {
     async getById(id: string): Promise<IUserSafe> {
@@ -19,21 +28,41 @@ export class UsersService {
     }
 
     async list(query: UsersQueryInput): Promise<ListUsersResult> {
-        return repo.list({
-            page: query.page,
-            limit: query.limit,
-            sort: query.sort,
+        const page = query.page
+        const limit = query.limit
+        const skip = (page - 1) * limit
+
+        const sortMap: Record<UserSort, Record<string, 1 | -1>> = {
+            'createdAt:1': { createdAt: 1 },
+            'createdAt:-1': { createdAt: -1 },
+            'fullName:1': { fullName: 1 },
+            'fullName:-1': { fullName: -1 },
+        }
+
+        const { items, total } = await repo.listRaw({
+            skip,
+            limit,
+            sort: sortMap[query.sort],
         })
+
+        const pages = Math.max(1, Math.ceil(total / limit))
+
+        return { items, page, limit, total, pages }
     }
 
-    async updatePartial(
-        id: string,
-        patch: UpdateUserSchemaInput
-    ): Promise<IUserSafe> {
-        const updated = await repo.updatePartial(id, {
-            fullName: patch.fullName,
-            birthDate: patch.birthDate ?? undefined,
-        })
+    async update(id: string, dto: UpdateUserDto): Promise<IUserSafe> {
+        const patch: UpdateUserInput = {}
+
+        if (dto.fullName !== undefined) {
+            patch.fullName = dto.fullName
+        }
+
+        if (dto.birthDate !== undefined) {
+            patch.birthDate =
+                dto.birthDate === null ? null : toDateUTC(dto.birthDate)
+        }
+
+        const updated = await repo.updatePartial(id, patch)
         if (!updated) {
             throw {
                 status: 404,
@@ -45,32 +74,51 @@ export class UsersService {
     }
 
     async block(id: string): Promise<IUserSafe> {
-        const updated = await repo.setActive(id, false)
-        if (!updated) {
+        const result = await repo.setActive(id, false)
+        if (!result) {
             throw {
                 status: 404,
                 code: 'USER_NOT_FOUND',
                 message: 'User not found',
             }
         }
-        return updated
+
+        const fullUser = await repo.findById(id)
+        if (!fullUser) {
+            throw {
+                status: 404,
+                code: 'USER_NOT_FOUND',
+                message: 'User not found',
+            }
+        }
+        return fullUser
     }
 
     async unblock(id: string): Promise<IUserSafe> {
-        const updated = await repo.setActive(id, true)
-        if (!updated) {
+        const result = await repo.setActive(id, true)
+        if (!result) {
             throw {
                 status: 404,
                 code: 'USER_NOT_FOUND',
                 message: 'User not found',
             }
         }
-        return updated
+
+        const user = await repo.findById(id)
+        if (!user) {
+            throw {
+                status: 404,
+                code: 'USER_NOT_FOUND',
+                message: 'User not found',
+            }
+        }
+
+        return user
     }
 
     async delete(id: string): Promise<void> {
-        const ok = await repo.deleteById(id)
-        if (!ok) {
+        const user = await repo.deleteById(id)
+        if (!user) {
             throw {
                 status: 404,
                 code: 'USER_NOT_FOUND',

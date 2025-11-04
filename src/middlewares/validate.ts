@@ -17,7 +17,8 @@ function handleZodError(res: Response, error: ZodError): void {
 export function validateBody(schema: ZodTypeAny): RequestHandler {
     return (req: Request, res: Response, next: NextFunction): void => {
         try {
-            schema.parse(req.body)
+            const parsed = schema.parse(req.body)
+            req.body = parsed
             next()
         } catch (err) {
             if (err instanceof ZodError) return handleZodError(res, err)
